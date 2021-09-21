@@ -10,7 +10,7 @@
 
 ### Estrutura da API
 
-#### Model: DataCep {#data-cep}
+<h3 id="data-cep">DataCep</h3>
 | Field | Type |
 |:------ | ---- |
 | cep | string |
