@@ -35,6 +35,7 @@ const CepController = {
     async show(request: Request, response: Response) {
         const { cep } = request.params as RequestParams
         let dataCep: DataCep = {}
+        let statusCode = 200
 
         // Verificar se cep está no banco de dados
         const queryFindCep = query(collectionCeps, where('cep', '==', cep))
@@ -54,7 +55,7 @@ const CepController = {
                 const { data } = responseApiViaCep
 
                 // Verificando se a API ViaCEP retornou { erro: true }
-                if (!dataCep?.erro) {
+                if (!data?.erro) {
                     dataCep = fillEmptyFieldsDataCep(data)
 
                     // Adicionando o cep sem pontuações
@@ -62,15 +63,19 @@ const CepController = {
 
                     // Salvar dataCep no banco de dados
                     await addDoc(collectionCeps, dataCep)
+
+                    statusCode = 201
                 } else {
                     dataCep = { erro: true }
+                    statusCode = 404
                 }
             } catch {
                 dataCep = { erro: true }
+                statusCode = 404
             }
         }
 
-        return response.json(dataCep)
+        return response.status(statusCode).json(dataCep)
     },
 }
 
