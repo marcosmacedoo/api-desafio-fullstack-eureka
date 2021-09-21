@@ -9,6 +9,7 @@ import {
 
 import { database } from '../database/database'
 import { api } from '../services/api'
+import { cepIsValid } from '../utils/cepIsValid'
 import { fillEmptyFieldsDataCep } from '../utils/fillEmptyFieldsDataCep'
 
 type RequestParams = {
@@ -33,45 +34,50 @@ const collectionCeps = collection(database, 'ceps')
 
 const CepController = {
     async show(request: Request, response: Response) {
-        const { cep } = request.params as RequestParams
         let dataCep: DataCep = {}
         let statusCode = 200
+        const { cep } = request.params as RequestParams
 
-        // Verificar se cep está no banco de dados
-        const queryFindCep = query(collectionCeps, where('cep', '==', cep))
-        const querySnapshot = await getDocs(queryFindCep)
-
-        // Se encontrou o cep no banco
-        if (!querySnapshot.empty) {
-            querySnapshot.forEach((doc) => {
-                dataCep = doc.data()
-            })
+        if (!cepIsValid(cep)) {
+            statusCode = 400
+            dataCep = { erro: true }
         } else {
-            // Se não encontrou no banco
-            try {
-                const responseApiViaCep = await api.get<DataCep>(
-                    `${cep}/json/unicode`
-                )
-                const { data } = responseApiViaCep
+            // Verificar se cep está no banco de dados
+            const queryFindCep = query(collectionCeps, where('cep', '==', cep))
+            const querySnapshot = await getDocs(queryFindCep)
 
-                // Verificando se a API ViaCEP retornou { erro: true }
-                if (!data?.erro) {
-                    dataCep = fillEmptyFieldsDataCep(data)
+            // Se encontrou o cep no banco
+            if (!querySnapshot.empty) {
+                querySnapshot.forEach((doc) => {
+                    dataCep = doc.data()
+                })
+            } else {
+                // Se não encontrou no banco
+                try {
+                    const responseApiViaCep = await api.get<DataCep>(
+                        `${cep}/json/unicode`
+                    )
+                    const { data } = responseApiViaCep
 
-                    // Adicionando o cep sem pontuações
-                    dataCep = { ...dataCep, cep }
+                    // Verificando se a API ViaCEP retornou { erro: true }
+                    if (!data?.erro) {
+                        dataCep = fillEmptyFieldsDataCep(data)
 
-                    // Salvar dataCep no banco de dados
-                    await addDoc(collectionCeps, dataCep)
+                        // Adicionando o cep sem pontuações
+                        dataCep = { ...dataCep, cep }
 
-                    statusCode = 201
-                } else {
+                        // Salvar dataCep no banco de dados
+                        await addDoc(collectionCeps, dataCep)
+
+                        statusCode = 201
+                    } else {
+                        dataCep = { erro: true }
+                        statusCode = 404
+                    }
+                } catch {
                     dataCep = { erro: true }
                     statusCode = 404
                 }
-            } catch {
-                dataCep = { erro: true }
-                statusCode = 404
             }
         }
 
