@@ -1,29 +1,21 @@
-type DataCep = {
-    cep?: string
-    logradouro?: string
-    complemento?: string
-    bairro?: string
-    localidade?: string
-    uf?: string
-    ibge?: string
-    gia?: string
-    ddd?: string
-    siafi?: string
-}
+import { DataCepModel } from '../models/DataCepModel'
 
-function fillEmptyFieldsDataCep(dataCep: DataCep) {
-    // Transformando o objeto em uma matriz
-    const dataArray = Object.entries(dataCep).map((rowData) => [
-        rowData[0],
-        rowData[1].length === 0 ? 'Não possui' : rowData[1],
-    ])
+function fillEmptyFieldsDataCep(dataCep: DataCepModel) {
+    let formattedDataCepObject: DataCepModel = {}
 
-    // Transformando a matriz em objeto
-    const formattedDataCep: DataCep = dataArray.reduce((obj, rowData) => {
-        return { ...obj, [rowData[0]]: rowData[1] }
-    }, {})
+    // Se o objeto estiver vazio
+    if (Object.keys(dataCep).length > 0) {
+        // Transformando o objeto em uma matriz
+        const formattedDataCepArray = Object.entries(dataCep).map((rowData) => [
+            rowData[0],
+            rowData[1].length === 0 ? 'Não possui' : rowData[1],
+        ])
 
-    return formattedDataCep
+        // Transformando a matriz em objeto
+        formattedDataCepObject = Object.fromEntries(formattedDataCepArray)
+    }
+
+    return formattedDataCepObject
 }
 
 export { fillEmptyFieldsDataCep }
